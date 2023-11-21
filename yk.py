@@ -54,13 +54,13 @@ class YouKu:
 
     # 若直接在首页小窗口上复制的视频网址，是重定向的网址。
     def redirect(self, url):
-        headers = {
-            "referer": "https://www.youku.com/",
-            "user-agent": (
-                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36"
-                " (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
-            ),
-        }
+        # headers = {
+        #     "referer": "https://www.youku.com/",
+        #     "user-agent": (
+        #         "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36"
+        #         " (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
+        #     ),
+        # }
         resp = session.get(url=url)
         return resp.url
 
@@ -331,12 +331,12 @@ class YouKu:
                 streams = data["stream"]
                 streamss.extend(streams)
                 return title, streams
-            except Exception as e:
+            except Exception:
                 return None, []
 
         url = "https://ups.youku.com/ups/get.json"  # light_get.json
         params = {
-            "ckey": "7B19C0AB12633B22E7FE81271162026020570708D6CC189E4924503C49D243A0DE6CD84A766832C2C99898FC5ED31F3709BB3CDD82C96492E721BDD381735026",
+            "ckey": "7B19C0AB12633B22E7FE81271162026020570708D6CC189E4924503C49D243A0DE6CD84A766832C2C99898FC5ED31F3709BB3CDD82C96492E721BDD381735026",  # noqa
             "client_ip": "192.168.3.1",
             "client_ts": "1697343919",
             "utid": self.utida,
@@ -401,12 +401,12 @@ class YouKu:
         user_info = self.utid()
         userid = user_info["utid"]
         page_info = self.page_parser(url)
-        emb = self.get_emb(page_info["videoId"])
+        self.get_emb(page_info["videoId"])
         steal_params = {
             "ccode": "0502",
             "utid": userid,
             "version": "9.4.39",
-            "ckey": "DIl58SLFxFNndSV1GFNnMQVYkx1PP5tKe1siZu/86PR1u/Wh1Ptd+WOZsHHWxysSfAOhNJpdVWsdVJNsfJ8Sxd8WKVvNfAS8aS8fAOzYARzPyPc3JvtnPHjTdKfESTdnuTW6ZPvk2pNDh4uFzotgdMEFkzQ5wZVXl2Pf1/Y6hLK0OnCNxBj3+nb0v72gZ6b0td+WOZsHHWxysSo/0y9D2K42SaB8Y/+aD2K42SaB8Y/+ahU+WOZsHcrxysooUeND",
+            "ckey": "DIl58SLFxFNndSV1GFNnMQVYkx1PP5tKe1siZu/86PR1u/Wh1Ptd+WOZsHHWxysSfAOhNJpdVWsdVJNsfJ8Sxd8WKVvNfAS8aS8fAOzYARzPyPc3JvtnPHjTdKfESTdnuTW6ZPvk2pNDh4uFzotgdMEFkzQ5wZVXl2Pf1/Y6hLK0OnCNxBj3+nb0v72gZ6b0td+WOZsHHWxysSo/0y9D2K42SaB8Y/+aD2K42SaB8Y/+ahU+WOZsHcrxysooUeND",  # noqa
             "client_ip": "192.168.1.1",
             "client_ts": 1698373135,
         }

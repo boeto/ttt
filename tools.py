@@ -1,8 +1,9 @@
 import base64
 import hashlib
 import os
+from typing import Optional
 import yaml
-from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.Cipher import AES
 from Crypto.Hash import SHA1
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
@@ -74,7 +75,7 @@ def djb2Hash(e):
     return t & 2147483647
 
 
-def aes_encrypt(key: bytes, data: bytes, iv: bytes = None):
+def aes_encrypt(key: bytes, data: bytes, iv: Optional[bytes] = None):
     if iv is None:
         iv = b"\x00" * 16
     cipher = AES.new(key, AES.MODE_CBC, iv)
@@ -82,7 +83,7 @@ def aes_encrypt(key: bytes, data: bytes, iv: bytes = None):
     return cipher.encrypt(data)
 
 
-def aes_decrypt(key: bytes, data: bytes, iv: bytes = None):
+def aes_decrypt(key: bytes, data: bytes, iv: Optional[bytes] = None):
     if iv is None:
         iv = b"\x00" * 16
     cipher = AES.new(key, AES.MODE_CBC, iv)
@@ -90,14 +91,14 @@ def aes_decrypt(key: bytes, data: bytes, iv: bytes = None):
     return unpad(data, cipher.block_size)
 
 
-def rsa_dec(prikey, data: bytes):
-    key = RSA.importKey(prikey)
-    cipher = PKCS1_OAEP.new(key)
-    ret = b""
-    k = cipher._key.size_in_bytes()
-    for i in range(0, len(data), k):
-        ret += cipher.decrypt(data[i : i + k])
-    return ret.decode()
+# def rsa_dec(prikey, data: bytes):
+#     key = RSA.importKey(prikey)
+#     cipher = PKCS1_OAEP.new(key)
+#     ret = b""
+#     k = cipher._key.size_in_bytes()
+#     for i in range(0, len(data), k):
+#         ret += cipher.decrypt(data[i : i + k])
+#     return ret.decode()
 
 
 def sha1withrsa(prikey, data: bytes):
@@ -109,12 +110,12 @@ def sha1withrsa(prikey, data: bytes):
 
 
 def dealck(ck: str) -> dict:
-    ck = ck.split(";")
+    cks = ck.split(";")
     ckdict = {}
-    for i in ck:
-        i = i.strip()
-        i = i.split("=")
-        ckdict[i[0]] = i[1]
+    for item in cks:
+        item = item.strip()
+        items = item.split("=")
+        ckdict[items[0]] = items[1]
     return ckdict
 
 
