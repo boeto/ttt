@@ -1,3 +1,4 @@
+import binascii
 import os
 import re, requests, time, json
 from hashlib import md5
@@ -5,12 +6,12 @@ from urllib.parse import parse_qsl, urlsplit
 import base64
 from Crypto.Cipher import AES
 from tabulate import tabulate
+import base64
+
 from pywidevine.L3.cdm import deviceconfig
 from pywidevine.L3.decrypt.wvdecryptcustom import WvDecrypt
 
-# from pywidevineb.L3.cdm import deviceconfig
-# from pywidevineb.L3.decrypt.wvdecryptcustom import WvDecrypt
-from tools import get_pssh, dealck
+from tools import dealck
 
 requests = requests.Session()
 
@@ -22,7 +23,10 @@ class YouKu:
         self.R = "aq1mVooivzaolmJY5NrQ3A=="
         self.key = ""
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
+            ),
         }
         requests.headers.update(self.headers)
         requests.cookies.update(self.cookie)
@@ -30,11 +34,11 @@ class YouKu:
         self.utida = "ZIH81OVlRSMDAOQQiG52i4cO"
 
     def youku_sign(self, t, data, token):
-        appKey = '24679788'  # 固定值
-        '''token值在cookie中'''
-        sign = token + '&' + t + '&' + appKey + '&' + data
+        appKey = "24679788"  # 固定值
+        """token值在cookie中"""
+        sign = token + "&" + t + "&" + appKey + "&" + data
         md = md5()
-        md.update(sign.encode('UTF-8'))
+        md.update(sign.encode("UTF-8"))
         sign = md.hexdigest()
         return sign
 
@@ -50,7 +54,10 @@ class YouKu:
     def redirect(self, url):
         headers = {
             "referer": "https://www.youku.com/",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36",
+            "user-agent": (
+                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
+            ),
         }
         resp = requests.get(url=url)
         return resp.url
@@ -70,12 +77,12 @@ class YouKu:
             return {"current_showid": showid, "videoId": 0, "vid": vid}
         except Exception as e:
             print(f"获取showid失败:{e}")
-            print(f"[red]获取showid失败[/red]")
+            print("[red]获取showid失败[/red]")
 
     def get_emb(self, videoId):
-        emb = base64.b64encode(("%swww.youku.com/" % videoId).encode('utf-8')).decode(
-            'utf-8'
-        )
+        emb = base64.b64encode(
+            ("%swww.youku.com/" % videoId).encode("utf-8")
+        ).decode("utf-8")
         return emb
 
     # 这个函数用来获取元素的第一个值
@@ -109,8 +116,12 @@ class YouKu:
         # print(data)
         ret = data["ret"]
         video_lists = []
+
         if ret == ["SUCCESS::调用成功"]:
-            stream = data["data"]["data"]["stream"]
+            stream = data.get("data", {}).get("data", {}).get("stream")
+            if not stream:
+                print("无法获取视频流")
+                return
             title = data["data"]["data"]["video"]["title"]
             print("解析成功:")
             keys = {}
@@ -121,10 +132,10 @@ class YouKu:
                 width = video["width"]
                 height = video["height"]
                 size = video.get("size", 0)
-                size = '{:.1f}'.format(float(size) / 1048576)
+                size = "{:.1f}".format(float(size) / 1048576)
                 drm_type = video["drm_type"]
                 audio_lang = video["audio_lang"]
-                if video['drm_type'] == "default":
+                if video["drm_type"] == "default":
                     key = ""
                 elif audio_lang not in keys.keys():
                     if drm_type == "cbcs":
@@ -133,9 +144,11 @@ class YouKu:
                         if key[0]:
                             key = key[1][0]
                     else:
-                        encryptR_server = video['encryptR_server']
-                        copyright_key = video['stream_ext']['copyright_key']
-                        key = self.copyrightDRM(self.r, encryptR_server, copyright_key)
+                        encryptR_server = video["encryptR_server"]
+                        copyright_key = video["stream_ext"]["copyright_key"]
+                        key = self.copyrightDRM(
+                            self.r, encryptR_server, copyright_key
+                        )
                     keys[audio_lang] = key
                 else:
                     key = keys[audio_lang]
@@ -151,10 +164,19 @@ class YouKu:
                         video.get("size", 0),
                     ]
                 )
-            video_lists = sorted(video_lists, key=lambda x: x[-1], reverse=True)
+            video_lists = sorted(
+                video_lists, key=lambda x: x[-1], reverse=True
+            )
             tb = tabulate(
                 [[*video_lists[i][:6]] for i in range(len(video_lists))],
-                headers=["标题", "分辨率", "视频大小", "drm_type", "base64key", "stream_type"],
+                headers=[
+                    "标题",
+                    "分辨率",
+                    "视频大小",
+                    "drm_type",
+                    "base64key",
+                    "stream_type",
+                ],
                 tablefmt="pretty",
                 showindex=range(1, len(video_lists) + 1),
             )
@@ -171,37 +193,68 @@ class YouKu:
                     m3u8_url,
                     _,
                 ) = video_lists[int(i) - 1]
-                savename = f"{title}_{resolution}_{size}"
-                savepath = os.path.join(os.getcwd(), "/download/yk")
-                rm3u8_url = m3u8_url.replace("%", "%%")
-                if rm3u8_url.startswith("http"):
-                    common_args = f"N_m3u8DL-RE.exe \"{rm3u8_url}\" --tmp-dir ./cache --save-name \"{title}\" --save-dir \"{savepath}\" --thread-count 16 --download-retry-count 30 --auto-select --check-segments-count"
+
+                print(f"video_lists[int(i) - 1]:::{video_lists[int(i) - 1]}")
+
+                # savename = f"{title}_{resolution}_{size}"
+                output_path = os.path.join(".", "output", "yk")
+                # 确保 output_path 文件夹存在
+                if not os.path.exists(output_path):
+                    os.makedirs(output_path)
+
+                # Windows 平台
+                if os.name == "nt":
+                    m3u8_dl_path = os.path.join("..", "N_m3u8DL-RE.exe")
+                # 其他平台，如 Linux 或 macOS
+                else:
+                    m3u8_dl_path = os.path.join("..", "N_m3u8DL-RE")
+
+                cachepath = os.path.join(".", "cache")
+                savepath = os.path.join(".", "download")
+
+                # rm3u8_url = m3u8_url.replace("%", "%%")
+                if m3u8_url.startswith("http"):
+                    common_args = (
+                        f'{m3u8_dl_path} "{m3u8_url}" --tmp-dir {cachepath}'
+                        f' --save-name "{title}" --save-dir "{savepath}"'
+                        " --thread-count 16 --download-retry-count 30"
+                        " --auto-select --check-segments-count"
+                    )
                     if drm_type == "default":
                         cmd = common_args
                     elif drm_type == "cbcs":
                         cmd = f"{common_args} --key {key}  -M format=mp4"
                     else:
-                        txt = f'''
+                        txt = f"""
                     #OUT,{savepath}
                     #DECMETHOD,ECB
                     #KEY,{key}
-                    {title}_{resolution}_{size},{m3u8_url}
-                                        '''
-                        with open("{}.txt".format(title), "a", encoding="gbk") as f:
+                    {title}_{resolution}_{size},{m3u8_url}"""
+
+                        txt_path = os.path.join(output_path, f"{title}.txt")
+
+                        with open(txt_path, "a", encoding="utf-8") as f:
                             f.write(txt)
                             print("下载链接已生成")
                             continue
+
                 else:
                     uri = re.findall(r'URI="(.*)"', m3u8_url)[0]
                     m3u8_text = requests.get(uri).text
-                    keyid = re.findall(r'KEYID=0x(.*),IV', m3u8_text)[0]
-                    m3u8_path = "{}.m3u8".format(title)
+                    keyid = re.findall(r"KEYID=0x(.*),IV", m3u8_text)[0]
+                    m3u8_path = os.path.join(output_path, f"{title}.m3u8")
                     with open(m3u8_path, "w", encoding="utf-8") as f:
                         f.write(m3u8_url)
                     key = "{}:{}".format(keyid, base64.b64decode(key).hex())
-                    common_args = f"N_m3u8DL-RE.exe \"{m3u8_path}\" --tmp-dir ./cache --save-name \"{title}\" --save-dir \"{savepath}\" --thread-count 16 --download-retry-count 30 --auto-select --check-segments-count"
+                    common_args = (
+                        f'{m3u8_dl_path} "{m3u8_path}" --tmp-dir {cachepath}'
+                        f' --save-name "{title}" --save-dir "{savepath}"'
+                        " --thread-count 16 --download-retry-count 30"
+                        " --auto-select --check-segments-count"
+                    )
                     cmd = f"{common_args} --key {key}  -M format=mp4"
-                with open("{}.bat".format(title), "a", encoding="gbk") as f:
+                bat_path = os.path.join(output_path, f"{title}.bat")
+                with open(bat_path, "a", encoding="utf-8") as f:
                     f.write(cmd)
                     f.write("\n")
             print("下载链接已生成")
@@ -218,13 +271,23 @@ class YouKu:
         crypto_1 = AES.new(r.encode(), AES.MODE_ECB)
         key_2 = crypto_1.decrypt(base64.b64decode(encryptR_server))
         crypto_2 = AES.new(key_2, AES.MODE_ECB)
-        return base64.b64encode(
-            base64.b64decode(crypto_2.decrypt(base64.b64decode(copyright_key)))
-        ).decode()
+        try:
+            decoded_string = base64.b64encode(
+                base64.b64decode(
+                    crypto_2.decrypt(base64.b64decode(copyright_key))
+                )
+            ).decode()
+            return decoded_string
+        except binascii.Error as e:
+            print(f"解码错误: {e}")
 
     def get_cbcs_key(self, license_url, m3u8_url):
         headers = {
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.82"
+            "user-agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+                " Edg/114.0.1823.82"
+            )
         }
         m3u8data = requests.get(m3u8_url, headers=headers).text
         key_url = re.findall(r"URI=\"(.*?)\"", m3u8data)[0]
@@ -236,11 +299,17 @@ class YouKu:
             device=deviceconfig.device_android_generic,
         )
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.82",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+                " Edg/114.0.1823.82"
+            ),
         }
         dic = dict(parse_qsl(urlsplit(license_url).query))
         url = license_url.split("?")[0]
-        dic["licenseRequest"] = base64.b64encode(wvdecrypt.get_challenge()).decode()
+        dic["licenseRequest"] = base64.b64encode(
+            wvdecrypt.get_challenge()
+        ).decode()
         dic["drmType"] = "widevine"
         response = requests.post(url, data=dic, headers=headers)
         license_b64 = response.json()["data"]
@@ -256,7 +325,7 @@ class YouKu:
             response = requests.get(url, headers=headers, params=params)
             try:
                 data = response.json()["data"]
-                title = data['show']["title"]
+                title = data["show"]["title"]
                 streams = data["stream"]
                 streamss.extend(streams)
                 return title, streams
@@ -273,7 +342,9 @@ class YouKu:
             # HAIER_PID = "36214723575196"; JIMI_PID = "3b777e6ae3c99e26";SONY_PID = "36281532078091";
             "player_type": "dnahard",  # system:hls,dnahard: cmfv
             "app_ver": "11.4.6.4",  # 2121104604,2121100600,11.0.6.0,11.4.6.4
-            "ccode": "0103010261",  # sony :0103010261, jimi:010301025C,haier:0103010275 280
+            "ccode": (
+                "0103010261"
+            ),  # sony :0103010261, jimi:010301025C,haier:0103010275 280
             "player_source": "21",  # 20 sdr 21hfr 22dolby 23bit10
             "encryptR_client": "fTWuKHLOVUoOide+VH/h8w==",
             "key_index": "key01",
@@ -281,7 +352,6 @@ class YouKu:
             "h265": "1",
             "media_type": "standard,sei",
             "client_id": "",
-            "ptoken": "",
             "ptoken": self.ptoken,
             "drm_type": "7",
             "extag": "EXT-X-PRIVINF",
@@ -374,7 +444,7 @@ class YouKu:
             break
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cookie = ""
     youku = YouKu(cookie)
     youku.start()

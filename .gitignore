@@ -241,3 +241,7 @@ $RECYCLE.BIN/
 /bak/
 config.yaml
 /*.bat
+/cache/
+/download/
+/output/
+.vscode*

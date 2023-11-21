@@ -24,7 +24,7 @@ def is_dir(path):
 
 
 def check_file():
-    files = ["./chache", "./download"]
+    files = ["./cache", "./download"]
     for file in files:
         is_dir(file)
 
