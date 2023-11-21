@@ -6,7 +6,8 @@ name: Build-All-Platforms
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: ["main"]
+    branches: ["dev"]
+    # branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -17,9 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-      
+
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       # Check-out repository
       - uses: actions/checkout@v3
@@ -27,9 +28,9 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
-          cache: 'pip'
+          python-version: "3.10" # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          architecture: "x64" # optional x64 or x86. Defaults to x64 if not specified
+          cache: "pip"
           cache-dependency-path: |
             **/requirements*.txt
 
@@ -43,7 +44,7 @@ jobs:
         with:
           script-name: main.py
           onefile: true
-  
+
       # Uploads artifacts
       - name: "Upload Artifacts"
         uses: actions/upload-artifact@v3
