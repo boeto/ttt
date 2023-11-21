@@ -1,7 +1,7 @@
 import binascii
 import os
 import re
-import requests
+from requests import Session
 import time
 import json
 from hashlib import md5
@@ -15,7 +15,7 @@ from pywidevine.L3.decrypt.wvdecryptcustom import WvDecrypt
 
 from tools import dealck
 
-requests = requests.Session()
+session = Session()
 
 
 class YouKu:
@@ -30,8 +30,8 @@ class YouKu:
                 " (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
             ),
         }
-        requests.headers.update(self.headers)
-        requests.cookies.update(self.cookie)
+        session.headers.update(self.headers)
+        session.cookies.update(self.cookie)
         self.ptoken = self.cookie.get("P_pck_rm")
         self.utida = "ZIH81OVlRSMDAOQQiG52i4cO"
 
@@ -45,9 +45,9 @@ class YouKu:
         return sign
 
     def utid(self):
-        json_cookie = requests.cookies.get_dict()
-        requests.cookies.clear()
-        requests.cookies.update(json_cookie)
+        json_cookie = session.cookies.get_dict()
+        session.cookies.clear()
+        session.cookies.update(json_cookie)
         utid = json_cookie.get("cna")
         token = json_cookie.get("_m_h5_tk").split("_")[0]
         return {"utid": utid, "token": token}
@@ -61,7 +61,7 @@ class YouKu:
                 " (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
             ),
         }
-        resp = requests.get(url=url)
+        resp = session.get(url=url)
         return resp.url
 
     def page_parser(self, url):
@@ -74,7 +74,7 @@ class YouKu:
             "video_id": vid,
         }
         try:
-            response = requests.get(url, params=params).json()
+            response = session.get(url, params=params).json()
             showid = response["show"]["id"]
             return {"current_showid": showid, "videoId": 0, "vid": vid}
         except Exception as e:
@@ -111,7 +111,7 @@ class YouKu:
             "callback": "mtopjsonp1",
             "data": params_data,
         }
-        resp = requests.get(url=url, params=params)
+        resp = session.get(url=url, params=params)
         result = resp.text
         # print(result)
         data = json.loads(result[12:-1])
@@ -242,7 +242,7 @@ class YouKu:
 
                 else:
                     uri = re.findall(r'URI="(.*)"', m3u8_url)[0]
-                    m3u8_text = requests.get(uri).text
+                    m3u8_text = session.get(uri).text
                     keyid = re.findall(r"KEYID=0x(.*),IV", m3u8_text)[0]
                     m3u8_path = os.path.join(output_path, f"{title}.m3u8")
                     with open(m3u8_path, "w", encoding="utf-8") as f:
@@ -291,9 +291,9 @@ class YouKu:
                 " Edg/114.0.1823.82"
             )
         }
-        m3u8data = requests.get(m3u8_url, headers=headers).text
+        m3u8data = session.get(m3u8_url, headers=headers).text
         key_url = re.findall(r"URI=\"(.*?)\"", m3u8data)[0]
-        response = requests.get(key_url, headers=headers).text
+        response = session.get(key_url, headers=headers).text
         pssh = response.split("data:text/plain;base64,").pop().split('",')[0]
         wvdecrypt = WvDecrypt(
             init_data_b64=pssh,
@@ -313,7 +313,7 @@ class YouKu:
             wvdecrypt.get_challenge()
         ).decode()
         dic["drmType"] = "widevine"
-        response = requests.post(url, data=dic, headers=headers)
+        response = session.post(url, data=dic, headers=headers)
         license_b64 = response.json()["data"]
         wvdecrypt.update_license(license_b64)
         Correct, keyswvdecrypt = wvdecrypt.start_process()
@@ -324,7 +324,7 @@ class YouKu:
         headers = {"user-agent": "OTTSDK;1.0.8.6;Android;9;2203121C"}
 
         def getdata():
-            response = requests.get(url, headers=headers, params=params)
+            response = session.get(url, headers=headers, params=params)
             try:
                 data = response.json()["data"]
                 title = data["show"]["title"]
