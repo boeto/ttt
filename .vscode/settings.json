@@ -1,0 +1,8 @@
+{
+  "files.autoSave": "onFocusChange",
+  "editor.formatOnSave": true,
+  "python.analysis.autoImportCompletions": true,
+  "black-formatter.args": [
+    "--skip-string-normalization"
+  ]
+}

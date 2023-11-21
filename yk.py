@@ -5,8 +5,11 @@ from urllib.parse import parse_qsl, urlsplit
 import base64
 from Crypto.Cipher import AES
 from tabulate import tabulate
-from pywidevineb.L3.cdm import deviceconfig
-from pywidevineb.L3.decrypt.wvdecryptcustom import WvDecrypt
+from pywidevine.L3.cdm import deviceconfig
+from pywidevine.L3.decrypt.wvdecryptcustom import WvDecrypt
+
+# from pywidevineb.L3.cdm import deviceconfig
+# from pywidevineb.L3.decrypt.wvdecryptcustom import WvDecrypt
 from tools import get_pssh, dealck
 
 requests = requests.Session()
@@ -59,7 +62,7 @@ class YouKu:
             "client_id": "53e6cc67237fc59a",
             "package": "com.huawei.hwvplayer.youku",
             "ext": "show",
-            "video_id": vid
+            "video_id": vid,
         }
         try:
             response = requests.get(url, params=params).json()
@@ -70,7 +73,9 @@ class YouKu:
             print(f"[red]获取showid失败[/red]")
 
     def get_emb(self, videoId):
-        emb = base64.b64encode(("%swww.youku.com/" % videoId).encode('utf-8')).decode('utf-8')
+        emb = base64.b64encode(("%swww.youku.com/" % videoId).encode('utf-8')).decode(
+            'utf-8'
+        )
         return emb
 
     # 这个函数用来获取元素的第一个值
@@ -135,17 +140,37 @@ class YouKu:
                 else:
                     key = keys[audio_lang]
                 video_lists.append(
-                    [title, size + "M", f"{width}x{height}", drm_type, key, video["stream_type"], m3u8_url,
-                     video.get("size", 0)])
+                    [
+                        title,
+                        size + "M",
+                        f"{width}x{height}",
+                        drm_type,
+                        key,
+                        video["stream_type"],
+                        m3u8_url,
+                        video.get("size", 0),
+                    ]
+                )
             video_lists = sorted(video_lists, key=lambda x: x[-1], reverse=True)
-            tb = tabulate([[*video_lists[i][:6]] for i in range(len(video_lists))],
-                          headers=["标题", "分辨率", "视频大小", "drm_type", "base64key", "stream_type"],
-                          tablefmt="pretty",
-                          showindex=range(1, len(video_lists) + 1))
+            tb = tabulate(
+                [[*video_lists[i][:6]] for i in range(len(video_lists))],
+                headers=["标题", "分辨率", "视频大小", "drm_type", "base64key", "stream_type"],
+                tablefmt="pretty",
+                showindex=range(1, len(video_lists) + 1),
+            )
             ch = input(f"{tb}\n请输入要下载的视频序号：")
             ch = ch.split(",")
             for i in ch:
-                title, size, resolution, drm_type, key, stream_type, m3u8_url, _ = video_lists[int(i) - 1]
+                (
+                    title,
+                    size,
+                    resolution,
+                    drm_type,
+                    key,
+                    stream_type,
+                    m3u8_url,
+                    _,
+                ) = video_lists[int(i) - 1]
                 savename = f"{title}_{resolution}_{size}"
                 savepath = os.path.join(os.getcwd(), "/download/yk")
                 rm3u8_url = m3u8_url.replace("%", "%%")
@@ -193,7 +218,9 @@ class YouKu:
         crypto_1 = AES.new(r.encode(), AES.MODE_ECB)
         key_2 = crypto_1.decrypt(base64.b64decode(encryptR_server))
         crypto_2 = AES.new(key_2, AES.MODE_ECB)
-        return base64.b64encode(base64.b64decode(crypto_2.decrypt(base64.b64decode(copyright_key)))).decode()
+        return base64.b64encode(
+            base64.b64decode(crypto_2.decrypt(base64.b64decode(copyright_key)))
+        ).decode()
 
     def get_cbcs_key(self, license_url, m3u8_url):
         headers = {
@@ -203,7 +230,11 @@ class YouKu:
         key_url = re.findall(r"URI=\"(.*?)\"", m3u8data)[0]
         response = requests.get(key_url, headers=headers).text
         pssh = response.split("data:text/plain;base64,").pop().split('",')[0]
-        wvdecrypt = WvDecrypt(init_data_b64=pssh, cert_data_b64="", device=deviceconfig.device_android_generic)
+        wvdecrypt = WvDecrypt(
+            init_data_b64=pssh,
+            cert_data_b64="",
+            device=deviceconfig.device_android_generic,
+        )
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.82",
         }
@@ -219,9 +250,7 @@ class YouKu:
             return Correct, keyswvdecrypt
 
     def get_TV_stream(self, vid):
-        headers = {
-            "user-agent": "OTTSDK;1.0.8.6;Android;9;2203121C"
-        }
+        headers = {"user-agent": "OTTSDK;1.0.8.6;Android;9;2203121C"}
 
         def getdata():
             response = requests.get(url, headers=headers, params=params)
@@ -272,7 +301,7 @@ class YouKu:
             "p": "27",
             "mdl": "XR-98X90L",
             "device_model": "XR-98X90L",
-            "": ""
+            "": "",
         }
         streamss = []
         player_source = [20, 23, 22, 21]
@@ -305,7 +334,7 @@ class YouKu:
             "version": "9.4.39",
             "ckey": "DIl58SLFxFNndSV1GFNnMQVYkx1PP5tKe1siZu/86PR1u/Wh1Ptd+WOZsHHWxysSfAOhNJpdVWsdVJNsfJ8Sxd8WKVvNfAS8aS8fAOzYARzPyPc3JvtnPHjTdKfESTdnuTW6ZPvk2pNDh4uFzotgdMEFkzQ5wZVXl2Pf1/Y6hLK0OnCNxBj3+nb0v72gZ6b0td+WOZsHHWxysSo/0y9D2K42SaB8Y/+aD2K42SaB8Y/+ahU+WOZsHcrxysooUeND",
             "client_ip": "192.168.1.1",
-            "client_ts": 1698373135
+            "client_ts": 1698373135,
         }
         biz_params = {
             "vid": page_info["vid"],
@@ -321,7 +350,7 @@ class YouKu:
             "encryptR_client": self.R,
             "skh": 1,
             "last_clarity": 5,
-            "clarity_chg_ts": 1689341442
+            "clarity_chg_ts": 1689341442,
         }
         ad_params = {
             "vip": 1,
