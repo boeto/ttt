@@ -20,37 +20,54 @@ from google.protobuf import text_format
 import logging
 import yaml
 from tabulate import tabulate
-from wasmer_compiler_cranelift import Compiler
-from wasmer import Store, Type, Function, Memory, Module, ImportObject, engine, Instance, Table
+
+# from wasmer_compiler_cranelift import Compiler
+# from wasmer import (
+#     Store,
+#     Type,
+#     Function,
+#     Memory,
+#     Module,
+#     ImportObject,
+#     engine,
+#     Instance,
+#     Table,
+# )
 from pywidevine.L3.cdm import deviceconfig
 from pywidevine.L3.decrypt.wvdecryptcustom import WvDecrypt
 import re, requests, time, json
 from hashlib import md5
 import base64
-from tools import rsa_dec, aes_decrypt, djb2Hash, b64decode, sha1withrsa, check_file, get_config
+from tools import (
+    rsa_dec,
+    aes_decrypt,
+    djb2Hash,
+    b64decode,
+    sha1withrsa,
+    check_file,
+    get_config,
+)
 
-from iqy import iqy
+# from iqy import iqy
 from yk import YouKu
 
 if __name__ == '__main__':
     check_file()
     config = get_config()
-  
+
     yk = config["yk"]
-    aqy = config["aqy"]
+    # aqy = config["aqy"]
     try:
-        
-        iq = iqy(aqy)
+        # iq = iqy(aqy)
         youku = YouKu(yk)
     except Exception as e:
         print("配置文件有误，请检查")
         print(e)
     while True:
-            url = input("请输入视频链接：")
-            if "iqiyi.com" in url:
-                iq.run(url)
-            elif "youku.com" in url:
-                youku.start(url)
-            else:
-                print("暂不支持该链接")
-
+        url = input("请输入视频链接：")
+        # if "iqiyi.com" in url:
+        #     iq.run(url)
+        if "youku.com" in url:
+            youku.start(url)
+        else:
+            print("暂不支持该链接")

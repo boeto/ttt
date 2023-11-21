@@ -239,3 +239,5 @@ $RECYCLE.BIN/
 
 ###
 /bak/
+config.yaml
+/*.bat

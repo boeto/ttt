@@ -14,7 +14,7 @@ yaml_path = "./config.yaml"
 def get_pssh(inia):
     raw = base64.b64decode(inia) if isinstance(inia, str) else inia
     offset = raw.rfind(b'pssh')
-    d = base64.b64encode(raw[offset - 4:offset - 4 + raw[offset - 1]])
+    d = base64.b64encode(raw[offset - 4 : offset - 4 + raw[offset - 1]])
     return d.decode('utf-8')
 
 
@@ -50,13 +50,13 @@ def get_config():
     try:
         data = read_yaml()
     except FileNotFoundError:
-        tx = input("请输入腾讯ck：")
+        # tx = input("请输入腾讯ck：")
         yk = input("请输入优酷ck：")
-        aqy = input("请输入爱奇艺ck：")
+        # aqy = input("请输入爱奇艺ck：")
         data = {
-            "txck": tx,
+            # "txck": tx,
             "yk": yk,
-            "aqy": aqy,
+            # "aqy": aqy,
         }
         write_yaml(data)
     return data
@@ -96,7 +96,7 @@ def rsa_dec(prikey, data: bytes):
     ret = b""
     k = cipher._key.size_in_bytes()
     for i in range(0, len(data), k):
-        ret += cipher.decrypt(data[i:i + k])
+        ret += cipher.decrypt(data[i : i + k])
     return ret.decode()
 
 
