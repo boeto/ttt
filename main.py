@@ -1,5 +1,4 @@
 from tools import (
-    check_file,
     get_config,
 )
 

@@ -1,19 +1,21 @@
 import binascii
 import os
-import re, requests, time, json
+import re
+from requests import Session
+import time
+import json
 from hashlib import md5
 from urllib.parse import parse_qsl, urlsplit
 import base64
 from Crypto.Cipher import AES
 from tabulate import tabulate
-import base64
 
 from pywidevine.L3.cdm import deviceconfig
 from pywidevine.L3.decrypt.wvdecryptcustom import WvDecrypt
 
 from tools import dealck
 
-requests = requests.Session()
+requests = Session()
 
 
 class YouKu:
