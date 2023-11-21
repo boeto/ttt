@@ -1,7 +1,7 @@
 import binascii
 import os
 import re
-from requests import Session
+import requests
 import time
 import json
 from hashlib import md5
@@ -15,7 +15,7 @@ from pywidevine.L3.decrypt.wvdecryptcustom import WvDecrypt
 
 from tools import dealck
 
-requests = Session()
+requests = requests.Session()
 
 
 class YouKu:
@@ -341,7 +341,9 @@ class YouKu:
             "client_ts": "1697343919",
             "utid": self.utida,
             "pid": "36281532078091",
-            # HAIER_PID = "36214723575196"; JIMI_PID = "3b777e6ae3c99e26";SONY_PID = "36281532078091";
+            # HAIER_PID = "36214723575196";
+            # JIMI_PID = "3b777e6ae3c99e26";
+            # SONY_PID = "36281532078091";
             "player_type": "dnahard",  # system:hls,dnahard: cmfv
             "app_ver": "11.4.6.4",  # 2121104604,2121100600,11.0.6.0,11.4.6.4
             "ccode": (

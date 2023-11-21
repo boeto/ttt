@@ -13,9 +13,9 @@ yaml_path = "./config.yaml"
 
 def get_pssh(inia):
     raw = base64.b64decode(inia) if isinstance(inia, str) else inia
-    offset = raw.rfind(b'pssh')
+    offset = raw.rfind(b"pssh")
     d = base64.b64encode(raw[offset - 4 : offset - 4 + raw[offset - 1]])
-    return d.decode('utf-8')
+    return d.decode("utf-8")
 
 
 def is_dir(path):
@@ -76,7 +76,7 @@ def djb2Hash(e):
 
 def aes_encrypt(key: bytes, data: bytes, iv: bytes = None):
     if iv is None:
-        iv = b'\x00' * 16
+        iv = b"\x00" * 16
     cipher = AES.new(key, AES.MODE_CBC, iv)
     data = pad(data, cipher.block_size)
     return cipher.encrypt(data)
@@ -84,7 +84,7 @@ def aes_encrypt(key: bytes, data: bytes, iv: bytes = None):
 
 def aes_decrypt(key: bytes, data: bytes, iv: bytes = None):
     if iv is None:
-        iv = b'\x00' * 16
+        iv = b"\x00" * 16
     cipher = AES.new(key, AES.MODE_CBC, iv)
     data = cipher.decrypt(data)
     return unpad(data, cipher.block_size)
@@ -123,7 +123,7 @@ def md5(data: str) -> str:
 
 
 def get_size(a):
-    size_suffixes = ['B', 'KB', 'MB', 'GB']
+    size_suffixes = ["B", "KB", "MB", "GB"]
     for suffix in size_suffixes:
         if a < 1024:
             return f"{a:.2f}{suffix}"
