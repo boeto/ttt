@@ -8,6 +8,7 @@
 # 如果是docker-compose命令的docker版本,
 # 请对应修改docker compose为docker-compose
 
+# 复制docker-compose.yml的内容,修改PUID/PGID和挂载容器目录后运行docker compose up
 docker compose up -d
 ```
 
