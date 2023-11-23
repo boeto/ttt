@@ -3,7 +3,7 @@
 # 启用程序: docker compose exec -u myuser media-web-dl /bin/bash
 services:
   media-web-dl:
-    image: boeto/media-web-dl
+    image: boeto/media-web-dl:dev
     container_name: media-web-dl
     environment:
       - PUID=1000 #换成你的uid

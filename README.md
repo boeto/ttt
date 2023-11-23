@@ -4,7 +4,10 @@
 
 ## 使用 docker compose 安装
 ```bash
-# 如果是docker-compose命令的docker版本,请对应修改docker compose为docker-compose
+# 请先确保你挂载的文件夹是否存在和具有读写权限
+# 如果是docker-compose命令的docker版本,
+# 请对应修改docker compose为docker-compose
+
 docker compose up -d
 ```
 
