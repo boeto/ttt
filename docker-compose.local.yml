@@ -1,0 +1,17 @@
+---
+# 运行程序: docker compose -f docker-compose.local.yml up -d --build
+# 启用程序: docker compose -f docker-compose.local.yml exec -u myuser media-web-dl /bin/bash
+services:
+  media-web-dl:
+    container_name: media-web-dl
+    environment:
+      - PUID=1000 #换成你的uid
+      - PGID=1000 #换成你的gid
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      #换成你的挂载目录
+      - ./media_web_dl/data:/app/media_web_dl/data
+      - ./media_web_dl/output:/app/media_web_dl/output
+      - ./media_web_dl/logs:/app/media_web_dl/logs

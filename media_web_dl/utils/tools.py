@@ -1,15 +1,11 @@
 import base64
 import hashlib
-import os
 from typing import Optional
-import yaml
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA1
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Util.Padding import pad, unpad
-
-yaml_path = "./config.yaml"
 
 
 def get_pssh(inia):
@@ -19,48 +15,15 @@ def get_pssh(inia):
     return d.decode("utf-8")
 
 
-def is_dir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
+# def is_dir(path):
+#     if not os.path.exists(path):
+#         os.makedirs(path)
 
 
-def check_file():
-    files = ["./cache", "./download"]
-    for file in files:
-        is_dir(file)
-
-
-def write_yaml(r):
-    with open(yaml_path, "w", encoding="utf-8") as f:
-        yaml.dump(r, f)
-
-
-def read_yaml():
-    with open(yaml_path, "r", encoding="utf-8") as f:
-        return yaml.load(f, Loader=yaml.FullLoader)
-
-
-def updata_yaml(k, v):
-    old_data = read_yaml()
-    old_data[k] = v
-    with open(yaml_path, "w", encoding="utf-8") as f:
-        yaml.dump(old_data, f)
-
-
-def get_config():
-    try:
-        data = read_yaml()
-    except FileNotFoundError:
-        # tx = input("请输入腾讯ck：")
-        yk = input("请输入优酷ck：")
-        # aqy = input("请输入爱奇艺ck：")
-        data = {
-            # "txck": tx,
-            "yk": yk,
-            # "aqy": aqy,
-        }
-        write_yaml(data)
-    return data
+# def check_file():
+#     files = ["./cache", "./download"]
+#     for file in files:
+#         is_dir(file)
 
 
 def b64decode(data: str):

@@ -1,4 +1,3 @@
-import binascii
 import os
 import re
 from requests import Session
@@ -9,13 +8,28 @@ from urllib.parse import parse_qsl, urlsplit
 import base64
 from Crypto.Cipher import AES
 from tabulate import tabulate
+import typer
 
-from pywidevine.L3.cdm import deviceconfig
-from pywidevine.L3.decrypt.wvdecryptcustom import WvDecrypt
+from media_web_dl.pywidevine.L3.cdm import deviceconfig
+from media_web_dl.pywidevine.L3.decrypt.wvdecryptcustom import WvDecrypt
+from media_web_dl.utils.logger import log
 
-from tools import dealck
+from media_web_dl.utils.tools import dealck
+from media_web_dl.utils.paths import output_path
 
 session = Session()
+
+# paths
+yk_output_path = output_path / "yk"
+
+yk_cache_path = yk_output_path / "cache"
+yk_save_path = yk_output_path / "save"
+yk_url_file_path = yk_output_path / "url_file"
+yk_history_path = yk_output_path / "history"
+
+yk_sh_dir_path = yk_url_file_path / "sh"
+yk_txt_dir_path = yk_url_file_path / "txt"
+yk_m3u8_dir_path = yk_url_file_path / "m3u8"
 
 
 class YouKu:
@@ -78,8 +92,8 @@ class YouKu:
             showid = response["show"]["id"]
             return {"current_showid": showid, "videoId": 0, "vid": vid}
         except Exception as e:
-            print(f"获取showid失败:{e}")
-            print("[red]获取showid失败[/red]")
+            log.error(f"获取showid失败:{e}")
+            raise e
 
     def get_emb(self, videoId):
         emb = base64.b64encode(
@@ -113,19 +127,19 @@ class YouKu:
         }
         resp = session.get(url=url, params=params)
         result = resp.text
-        # print(result)
+        # log.info(result)
         data = json.loads(result[12:-1])
-        # print(data)
+        # log.info(data)
         ret = data["ret"]
         video_lists = []
 
         if ret == ["SUCCESS::调用成功"]:
             stream = data.get("data", {}).get("data", {}).get("stream")
             if not stream:
-                print("无法获取视频流")
+                log.info("无法获取视频流")
                 return
             title = data["data"]["data"]["video"]["title"]
-            print("解析成功:")
+            log.info("解析成功")
             keys = {}
             tv_stream = self.get_TV_stream(vid)
             stream.extend(tv_stream)
@@ -182,8 +196,25 @@ class YouKu:
                 tablefmt="pretty",
                 showindex=range(1, len(video_lists) + 1),
             )
-            ch = input(f"{tb}\n请输入要下载的视频序号：")
-            ch = ch.split(",")
+
+            # log.debug(f"video_lists:::{video_lists}")
+            log.info(tb)
+            # ch_input = input(f"{tb}\n请输入要下载的视频序号:")
+            ch_input = typer.prompt("""
+#输入格式
+单集: 下载单个url文件, 例如: 5
+范围: 下载范围内的url文件, 例如: 1-5
+多个: 下载多个url文件, 例如: 1,3,5,7
+请输入要下载的视频序号""")
+            log.debug(f"下载视频序号文件: {ch_input}")
+
+            # -表示范围，,表示多个，如1-3表示1,2,3
+            if "-" in ch_input:
+                start, end = ch_input.split("-")
+                ch = list(range(int(start), int(end) + 1))
+            else:
+                # ,表示多个，如1,3,5,7
+                ch = ch_input.split(",")
             for i in ch:
                 (
                     title,
@@ -196,31 +227,43 @@ class YouKu:
                     _,
                 ) = video_lists[int(i) - 1]
 
-                print(f"video_lists[int(i) - 1]:::{video_lists[int(i) - 1]}")
+                m3u8_info = (
+                    f"title:{title}, size:{size}, resolution:{resolution},"
+                    f" drm_type:{drm_type}, key:{key},"
+                    f" stream_type:{stream_type}"
+                )
 
-                # savename = f"{title}_{resolution}_{size}"
-                output_path = os.path.join(".", "output", "yk")
-                # 确保 output_path 文件夹存在
-                if not os.path.exists(output_path):
-                    os.makedirs(output_path)
+                log.debug(
+                    f"video_lists[int(i) - 1]:::{video_lists[int(i) - 1]}"
+                )
 
-                # Windows 平台
-                if os.name == "nt":
-                    m3u8_dl_path = os.path.join("..", "N_m3u8DL-RE.exe")
-                # 其他平台，如 Linux 或 macOS
-                else:
-                    m3u8_dl_path = os.path.join("..", "N_m3u8DL-RE")
+                save_name = (
+                    f"{title}_{resolution}_{drm_type}_{stream_type}_{size}_{i}"
+                )
+                log.debug(f"save_name:::{save_name}")
 
-                cachepath = os.path.join(".", "cache")
-                savepath = os.path.join(".", "download")
+                yk_sh_file_path = yk_sh_dir_path / f"{save_name}.sh"
+                yk_txt_file_path = yk_txt_dir_path / f"{save_name}.txt"
+                yk_dot_m3u8_file_path = yk_m3u8_dir_path / f"{save_name}.m3u8"
+
+                m3u8_bin_path = "N_m3u8DL-RE"
+
+                yk_cache_path.mkdir(parents=True, exist_ok=True)
+                yk_save_path.mkdir(parents=True, exist_ok=True)
+                yk_history_path.mkdir(parents=True, exist_ok=True)
+
+                yk_sh_dir_path.mkdir(parents=True, exist_ok=True)
+                yk_txt_dir_path.mkdir(parents=True, exist_ok=True)
+                yk_m3u8_dir_path.mkdir(parents=True, exist_ok=True)
 
                 # rm3u8_url = m3u8_url.replace("%", "%%")
                 if m3u8_url.startswith("http"):
                     common_args = (
-                        f'{m3u8_dl_path} "{m3u8_url}" --tmp-dir {cachepath}'
-                        f' --save-name "{title}" --save-dir "{savepath}"'
-                        " --thread-count 16 --download-retry-count 30"
-                        " --auto-select --check-segments-count"
+                        f'{m3u8_bin_path} "{m3u8_url}" --tmp-dir'
+                        f' {yk_cache_path} --save-name "{save_name}"'
+                        f' --save-dir "{yk_save_path}" --thread-count 16'
+                        " --download-retry-count 30 --auto-select"
+                        " --check-segments-count"
                     )
                     if drm_type == "default":
                         cmd = common_args
@@ -228,60 +271,108 @@ class YouKu:
                         cmd = f"{common_args} --key {key}  -M format=mp4"
                     else:
                         txt = f"""
-                    #OUT,{savepath}
+                    #OUT,{yk_save_path}
                     #DECMETHOD,ECB
                     #KEY,{key}
                     {title}_{resolution}_{size},{m3u8_url}"""
-
-                        txt_path = os.path.join(output_path, f"{title}.txt")
-
-                        with open(txt_path, "a", encoding="utf-8") as f:
-                            f.write(txt)
-                            print("下载链接已生成")
+                        if yk_txt_file_path.exists():
+                            log.debug(f"txt:{txt}")
+                            log.info(
+                                f"{yk_txt_file_path}文件已存在,如需要重新下载,请删除该文件"
+                            )
                             continue
+                        with open(
+                            yk_txt_file_path, "a", encoding="utf-8"
+                        ) as f:
+                            f.write(txt)
+                        log.info(f"{yk_txt_file_path}文件已经写入: {txt}")
+                        continue
 
                 else:
                     uri = re.findall(r'URI="(.*)"', m3u8_url)[0]
                     m3u8_text = session.get(uri).text
                     keyid = re.findall(r"KEYID=0x(.*),IV", m3u8_text)[0]
-                    m3u8_path = os.path.join(output_path, f"{title}.m3u8")
-                    with open(m3u8_path, "w", encoding="utf-8") as f:
+
+                    if yk_dot_m3u8_file_path.exists():
+                        log.debug(f"m3u8_url:{m3u8_url}")
+                        log.info(
+                            f"{yk_dot_m3u8_file_path}文件已存在,如需要重新下载,请删除该文件"
+                        )
+                        continue
+                    with open(
+                        yk_dot_m3u8_file_path, "w", encoding="utf-8"
+                    ) as f:
                         f.write(m3u8_url)
+                    log.info(f"{yk_dot_m3u8_file_path}文件已写入: {m3u8_url}")
+
                     key = "{}:{}".format(keyid, base64.b64decode(key).hex())
                     common_args = (
-                        f'{m3u8_dl_path} "{m3u8_path}" --tmp-dir {cachepath}'
-                        f' --save-name "{title}" --save-dir "{savepath}"'
-                        " --thread-count 16 --download-retry-count 30"
-                        " --auto-select --check-segments-count"
+                        f'{m3u8_bin_path} "{yk_dot_m3u8_file_path}" --tmp-dir'
+                        f' {yk_cache_path} --save-name "{save_name}"'
+                        f' --save-dir "{yk_save_path}" --thread-count 16'
+                        " --download-retry-count 30 --auto-select"
+                        " --check-segments-count"
                     )
-                    cmd = f"{common_args} --key {key}  -M format=mp4"
-                bat_path = os.path.join(output_path, f"{title}.bat")
-                with open(bat_path, "a", encoding="utf-8") as f:
-                    f.write(cmd)
+                    cmd = f"{common_args} --key {key} -M format=mp4"
+
+                cmd_content = f"#!/usr/bin/env bash\n#{m3u8_info}\n{cmd}"
+
+                if yk_sh_file_path.exists():
+                    log.debug(f"cmd_content:{cmd_content}")
+                    log.info(
+                        f"{yk_sh_file_path}文件已存在,如需要重新下载,请删除该文件"
+                    )
+                    continue
+                with open(yk_sh_file_path, "a", encoding="utf-8") as f:
+                    f.write(cmd_content)
                     f.write("\n")
-            print("下载链接已生成")
+                os.chmod(yk_sh_file_path, 0o755)
+                log.info(f"{yk_sh_file_path}文件已写入: {cmd_content}")
+            log.info("下载链接已生成")
+            log.info(
+                "查看sh目录下的url_file文件: media-web-dl show yk-save-sh"
+            )
+            log.info(
+                "下载sh目录下的url_file的视频: media-web-dl dl"
+                " yk-save-sh-video"
+            )
         elif ret == ["FAIL_SYS_ILLEGAL_ACCESS::非法请求"]:
-            print("请求参数错误")
+            log.info("请求参数错误")
         elif ret == ["FAIL_SYS_TOKEN_EXOIRED::令牌过期"]:
-            print("Cookie过期")
+            log.info("Cookie过期")
             return 10086
         else:
-            print(ret[0])
+            log.info(ret[0])
         return 0
 
     def copyrightDRM(self, r, encryptR_server, copyright_key):
-        crypto_1 = AES.new(r.encode(), AES.MODE_ECB)
-        key_2 = crypto_1.decrypt(base64.b64decode(encryptR_server))
-        crypto_2 = AES.new(key_2, AES.MODE_ECB)
-        try:
-            decoded_string = base64.b64encode(
-                base64.b64decode(
-                    crypto_2.decrypt(base64.b64decode(copyright_key))
-                )
-            ).decode()
-            return decoded_string
-        except binascii.Error as e:
-            print(f"解码错误: {e}")
+        retry_count = 0
+        while retry_count < 5:
+            try:
+                crypto_1 = AES.new(r.encode(), AES.MODE_ECB)
+                key_2 = crypto_1.decrypt(base64.b64decode(encryptR_server))
+                crypto_2 = AES.new(key_2, AES.MODE_ECB)
+                log.debug(f"opyright_key:::{copyright_key}")
+
+                # 对copyright_key进行base64解码
+                decoded = base64.b64decode(copyright_key)
+                log.debug(f"decoded:::{decoded!r}")
+
+                # 对解码后的结果进行解密
+                decrypted = crypto_2.decrypt(decoded)
+                log.debug(f"decrypted:::{decrypted!r}")
+
+                # 将b2转换为一个base64编码的字符串
+                string_64 = base64.b64encode(decrypted)
+                log.debug(f"encode_64:::{string_64!r}")
+
+                return string_64
+
+            except Exception as e:
+                log.error(f"解码错误: {e}")
+                retry_count += 1
+                time.sleep(3)
+        raise Exception("解码重试次数超过限制")
 
     def get_cbcs_key(self, license_url, m3u8_url):
         headers = {
@@ -438,17 +529,10 @@ class YouKu:
         sign = self.youku_sign(t, params_data, user_info["token"])
         return self.m3u8_url(t, params_data, sign, page_info["vid"])
 
-    def start(self, url=None):
-        url = input("请输入视频链接：") if url is None else url
+    def start(self, url: str):
         url = self.redirect(url)
         for i in range(3):
             ret = self.get(url)
             if ret:
                 continue
             break
-
-
-if __name__ == "__main__":
-    cookie = ""
-    youku = YouKu(cookie)
-    youku.start()

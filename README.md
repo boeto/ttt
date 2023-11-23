@@ -1,59 +1,46 @@
-爱优腾视频下载器(web端）
+# 基本说明
 
-## 基本说明
+容器适配linux/amd64
 
-#### 支持内容
+## 使用 docker compose 安装
+```bash
+# 如果是docker-compose命令的docker版本,请对应修改docker compose为docker-compose
+docker compose up -d
+```
 
-1.爱奇艺普通视频以及wvdrm内容
+## media-web-dl cli使用说明
+1. 以myuser用户身份启用容器bash
+```bash
+docker compose exec -u myuser media-web-dl /bin/bash
+```
 
-2.腾讯普通视频
+2. 下载url-file
+```bash
+media-web-dl dl url-file
+-->输入视频链接: http://xxx.com/xxx/xxx/xxx
+-->首次运行需要输入对应视频网站的cookie: 你的cookie
+-->解析链接并输入需要下载的文件编号: 1-5
+    #举例,输入下面说明的格式,建议使用范围格式生成多个url尝试下载视频,例如4k范围是1-5,则输入1-5
+    单集: 下载单个url文件, 例如: 5
+    范围: 下载范围内的url文件, 例如: 1-5
+    多个: 下载多个url文件, 例如: 1,3,5,7
+-->下载url-file完成
+```
 
-3.优酷普通视频，wv加密内容以及自研加密内容
+3. 通过url-file下载视频
+```bash
+# 下载yk视频
+media-web-dl dl yk-save-sh-video
+-->请输入要下载的视频编号: 3 #举例,输入单个数字编号下载对应编号的视频
+-->视频下载中,注意留意日志是否报错,如果出现[ERROR]报错,则说明这个url-file是无效的,可以按下CTRL+C结束进程,不需要等待进程完成或重复尝试
+-->处理过的url-file将移动到output/yk/history文件夹中,成功下载的视频文件在output/yk/save文件夹中
+-->cache文件夹一般不需要理会,如果程序结束后还存在缓存文件,则可以手动清理cache下的所有文件
+```
+只适配处理url_file中的sh文件夹下的url文件,txt和m3u8中的url文件如有兴趣请自行研究
 
-#### 暂不支持
-
-腾讯wv（我网页都播放不了），chacha20（超前买不起）
-
-### 使用说明
-
-只提供win10文件，其余系统自行编译，下载相关依赖
-
-本软件支持解析，不支持破解
-
-1.下载链接中全部文件，放到同一个文件夹
-
-2.第一次运行需要输入三大网站cookie,必须输，**没有会员也要输，除非自己编译**
-
-3.输入链接，然后不报错的话，会生成bat文件或者txt,
-
-bat文件直接运行，
-
-txt需要下载https://www.52pojie.cn/thread-1631141-1-1.html，直接拖进下载器就行
-
-报错的话，根据源码自行修改
-
-## 运行截图
-
-![img](https://s3.ananas.chaoxing.com/sv-w8/doc/c9/08/85/36834fabf123a4ce08f07dfc736d9d50/thumb/1.png)
-
-![img](https://s3.ananas.chaoxing.com/sv-w8/doc/c9/08/85/36834fabf123a4ce08f07dfc736d9d50/thumb/2.png)
-
-![img](https://s3.ananas.chaoxing.com/sv-w8/doc/c9/08/85/36834fabf123a4ce08f07dfc736d9d50/thumb/3.png)
-
-![img](https://s3.ananas.chaoxing.com/sv-w8/doc/c9/08/85/36834fabf123a4ce08f07dfc736d9d50/thumb/4.png)
+4. 其他
+`media-web-dl --help`
 
 ## 郑重声明
 
 **本软件仅限研究web视频下载技术，所以开源了，软件本身并不重要，其中的部分参数如何逆向才重要**
-
-**比如爱奇艺的vf,虽然只是一个md5，但混淆的相当复杂，以及优酷解密key的jsvmp，还有腾讯的ckey:vmp+wasm以及响应的解密也是一个jsvmp**
-
-
-
-## 2023-10-31更新
-
-1.增加腾讯杜比
-
-2.增加爱奇艺4k
-
-3.下载器修复，优酷存在多个map导致下载只有6s，修复爱奇艺wv加密，读取不到init.mp4
