@@ -6,6 +6,9 @@ on:
       - dev
     paths:
       - version.txt
+      - Dockerfile
+      - docker-compose.yml
+      - docker-compose.dev.yml
       - .github/workflows/build-dev.yml
 
 env:
