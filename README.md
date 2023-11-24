@@ -40,17 +40,23 @@ docker compose up -d
 
 3. 通过url-file下载视频
 
-    3.1 下载yk视频
-
     ```bash
+    # 下载yk视频
     media-web-dl dl yk-save-sh-video
+    -->请输入要下载的视频编号: 3/all/q 
 
-    # 举例,输入单个数字编号下载对应编号的视频
-    -->请输入要下载的视频编号: 3 
+    # 下载iqy视频
+    media-web-dl dl iqy-save-sh-video
+    -->请输入要下载的视频编号: 3/all/q
+
+    # 请输入要下载的视频序号,例如3
+    # 如果需要下载全部请输入all
+    # 如果需要退出请输入q
+    
     ```
 
    - 视频下载过程中,**注意留意日志是否报错**,如果出现[ERROR]报错,则说明这个url-file是无效的,可以按下CTRL+C结束进程,不需要等待进程完成或重复尝试
-   - 处理过的url-file将移动到output/yk/history文件夹中,成功下载的视频文件在output/yk/save文件夹中
+   - 处理过的url-file将移动到output/xx/history文件夹中,成功下载的视频文件在output/xx/save文件夹中
    - cache文件夹一般不需要理会,如果程序结束后还存在缓存文件,则可以手动清理cache下的所有文件
    - 只适配处理url_file中的sh文件夹下的url文件,txt和m3u8中的url文件如有兴趣请自行研究
 

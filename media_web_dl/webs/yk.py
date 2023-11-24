@@ -16,6 +16,7 @@ from media_web_dl.utils.logger import log
 
 from media_web_dl.utils.tools import dealck
 from media_web_dl.utils.paths import output_path
+from media_web_dl.webs.common import m3u8_bin_path
 
 session = Session()
 
@@ -197,9 +198,7 @@ class YouKu:
                 showindex=range(1, len(video_lists) + 1),
             )
 
-            # log.debug(f"video_lists:::{video_lists}")
             log.info(tb)
-            # ch_input = input(f"{tb}\n请输入要下载的视频序号:")
             ch_input = typer.prompt("""
 #输入格式
 单集: 下载单个url文件, 例如: 5
@@ -215,7 +214,13 @@ class YouKu:
             else:
                 # ,表示多个，如1,3,5,7
                 ch = ch_input.split(",")
+
             for i in ch:
+                i = int(i)
+                if i > len(video_lists):
+                    log.error("序号大于列表数,请重新输入")
+                    break
+
                 (
                     title,
                     size,
@@ -225,32 +230,28 @@ class YouKu:
                     stream_type,
                     m3u8_url,
                     _,
-                ) = video_lists[int(i) - 1]
+                ) = video_lists[i - 1]
 
-                m3u8_info = (
-                    f"title:{title}, size:{size}, resolution:{resolution},"
-                    f" drm_type:{drm_type}, key:{key},"
-                    f" stream_type:{stream_type}"
-                )
-
-                log.debug(
-                    f"video_lists[int(i) - 1]:::{video_lists[int(i) - 1]}"
-                )
+                # m3u8_info = (
+                #     f"title:{title}, size:{size}, resolution:{resolution},"
+                #     f" drm_type:{drm_type}, key:{key},"
+                #     f" stream_type:{stream_type}"
+                # )
 
                 save_name = (
                     f"{title}_{resolution}_{drm_type}_{stream_type}_{size}_{i}"
-                )
+                ).replace(" ", "_")
                 log.debug(f"save_name:::{save_name}")
 
                 yk_sh_file_path = yk_sh_dir_path / f"{save_name}.sh"
                 yk_txt_file_path = yk_txt_dir_path / f"{save_name}.txt"
                 yk_dot_m3u8_file_path = yk_m3u8_dir_path / f"{save_name}.m3u8"
 
-                m3u8_bin_path = "N_m3u8DL-RE"
+                save_dir_path = yk_save_path / (f"{title}").replace(" ", "_")
 
                 yk_cache_path.mkdir(parents=True, exist_ok=True)
-                yk_save_path.mkdir(parents=True, exist_ok=True)
                 yk_history_path.mkdir(parents=True, exist_ok=True)
+                save_dir_path.mkdir(parents=True, exist_ok=True)
 
                 yk_sh_dir_path.mkdir(parents=True, exist_ok=True)
                 yk_txt_dir_path.mkdir(parents=True, exist_ok=True)
@@ -261,7 +262,7 @@ class YouKu:
                     common_args = (
                         f'{m3u8_bin_path} "{m3u8_url}" --tmp-dir'
                         f' {yk_cache_path} --save-name "{save_name}"'
-                        f' --save-dir "{yk_save_path}" --thread-count 16'
+                        f' --save-dir "{save_dir_path}" --thread-count 16'
                         " --download-retry-count 30 --auto-select"
                         " --check-segments-count"
                     )
@@ -271,7 +272,7 @@ class YouKu:
                         cmd = f"{common_args} --key {key}  -M format=mp4"
                     else:
                         txt = f"""
-                    #OUT,{yk_save_path}
+                    #OUT,{save_dir_path}
                     #DECMETHOD,ECB
                     #KEY,{key}
                     {title}_{resolution}_{size},{m3u8_url}"""
@@ -307,15 +308,15 @@ class YouKu:
 
                     key = "{}:{}".format(keyid, base64.b64decode(key).hex())
                     common_args = (
-                        f'{m3u8_bin_path} "{yk_dot_m3u8_file_path}" --tmp-dir'
-                        f' {yk_cache_path} --save-name "{save_name}"'
-                        f' --save-dir "{yk_save_path}" --thread-count 16'
-                        " --download-retry-count 30 --auto-select"
-                        " --check-segments-count"
+                        f'{m3u8_bin_path} "{yk_dot_m3u8_file_path}"'
+                        f" --tmp-dir {yk_cache_path} --save-name"
+                        f' "{save_name}" --save-dir "{save_dir_path}"'
+                        " --thread-count 16 --download-retry-count 30"
+                        " --auto-select --check-segments-count"
                     )
                     cmd = f"{common_args} --key {key} -M format=mp4"
 
-                cmd_content = f"#!/usr/bin/env bash\n#{m3u8_info}\n{cmd}"
+                cmd_content = f"#!/usr/bin/env bash\n{cmd}"
 
                 if yk_sh_file_path.exists():
                     log.debug(f"cmd_content:{cmd_content}")
@@ -328,14 +329,15 @@ class YouKu:
                     f.write("\n")
                 os.chmod(yk_sh_file_path, 0o755)
                 log.info(f"{yk_sh_file_path}文件已写入: {cmd_content}")
-            log.info("下载链接已生成")
-            log.info(
-                "查看sh目录下的url_file文件: media-web-dl show yk-save-sh"
-            )
-            log.info(
-                "下载sh目录下的url_file的视频: media-web-dl dl"
-                " yk-save-sh-video"
-            )
+
+                log.info(f"链接文件已生成: {yk_sh_file_path}")
+                log.info(
+                    "查看sh目录下的链接文件文件: media-web-dl show yk-save-sh"
+                )
+                log.info(
+                    "下载sh目录下链接文件的视频: media-web-dl dl"
+                    " yk-save-sh-video"
+                )
         elif ret == ["FAIL_SYS_ILLEGAL_ACCESS::非法请求"]:
             log.info("请求参数错误")
         elif ret == ["FAIL_SYS_TOKEN_EXOIRED::令牌过期"]:
@@ -352,19 +354,15 @@ class YouKu:
                 crypto_1 = AES.new(r.encode(), AES.MODE_ECB)
                 key_2 = crypto_1.decrypt(base64.b64decode(encryptR_server))
                 crypto_2 = AES.new(key_2, AES.MODE_ECB)
-                log.debug(f"opyright_key:::{copyright_key}")
 
                 # 对copyright_key进行base64解码
                 decoded = base64.b64decode(copyright_key)
-                log.debug(f"decoded:::{decoded!r}")
 
                 # 对解码后的结果进行解密
                 decrypted = crypto_2.decrypt(decoded)
-                log.debug(f"decrypted:::{decrypted!r}")
 
                 # 将b2转换为一个base64编码的字符串
                 string_64 = base64.b64encode(decrypted)
-                log.debug(f"encode_64:::{string_64!r}")
 
                 return string_64
 

@@ -86,10 +86,10 @@ def md5(data: str) -> str:
     return hashlib.md5(data.encode()).hexdigest()
 
 
-def get_size(a):
+def get_size(size: int | float) -> str:
     size_suffixes = ["B", "KB", "MB", "GB"]
     for suffix in size_suffixes:
-        if a < 1024:
-            return f"{a:.2f}{suffix}"
-        a /= 1024
-    return f"{a:.2f}TB"
+        if size < 1024:
+            return f"{size:.2f}{suffix}"
+        size /= 1024
+    return f"{size:.2f}TB"
