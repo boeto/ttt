@@ -608,29 +608,33 @@ class TX:
         self.run(url)
 
     def run(self, url):
-        list = self.get_list(url)
+        url_list = self.get_list(url)
         log.info(
             tabulate(
-                list,
+                url_list,
                 headers=["cover_c_title", "play_title", "vid"],
                 tablefmt="grid",
-                showindex=range(1, len(list) + 1),
+                showindex=range(1, len(url_list) + 1),
             )
         )
 
-        av_index_input = typer.prompt(select_prompt)
+        av_index_input = typer.prompt(f"{select_prompt}")
         log.debug(f"下载视频序号文件: {av_index_input}")
 
         # -表示范围，,表示多个，如1-3表示1,2,3
         if "-" in av_index_input:
+            log.debug(f"av_index_input:::{av_index_input}")
             start, end = av_index_input.split("-")
+            log.debug(f"start:::{start}")
+            log.debug(f"end:::{end}")
             av_index_list = list(range(int(start), int(end) + 1))
+            log.debug(f"av_index_list:::{av_index_list}")
         else:
             # ,表示多个，如1,3,5,7
             av_index_list = av_index_input.split(",")
 
         for av_index in av_index_list:
-            viddeodata = list[int(av_index) - 1]
+            viddeodata = url_list[int(av_index) - 1]
             c_title, title, vid = viddeodata
             data = self.get(vid=vid, url=url)
             fi = data.get("fl", {}).get("fi", {})
