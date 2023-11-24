@@ -5,6 +5,7 @@ on:
     branches:
       - dev
     paths:
+      - build.txt
       - version.txt
       - Dockerfile
       - docker-compose.yml
