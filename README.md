@@ -49,6 +49,10 @@ docker compose up -d
     media-web-dl dl iqy-save-sh-video
     -->请输入要下载的视频编号: 3/all/q
 
+    # 下载iqy视频
+    media-web-dl dl tx-save-sh-video
+    -->请输入要下载的视频编号: 3/all/q
+
     # 请输入要下载的视频序号,例如3
     # 如果需要下载全部请输入all
     # 如果需要退出请输入q

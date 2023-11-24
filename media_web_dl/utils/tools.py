@@ -6,6 +6,7 @@ from Crypto.Hash import SHA1
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Util.Padding import pad, unpad
+from Cryptodome.Cipher import PKCS1_OAEP
 
 
 def get_pssh(inia):
@@ -32,6 +33,8 @@ def b64decode(data: str):
 
 
 def djb2Hash(e):
+    if e is None:
+        return
     t = 5381
     for r in range(len(e)):
         t += (t << 5) + ord(e[r])
@@ -54,14 +57,14 @@ def aes_decrypt(key: bytes, data: bytes, iv: Optional[bytes] = None):
     return unpad(data, cipher.block_size)
 
 
-# def rsa_dec(prikey, data: bytes):
-#     key = RSA.importKey(prikey)
-#     cipher = PKCS1_OAEP.new(key)
-#     ret = b""
-#     k = cipher._key.size_in_bytes()
-#     for i in range(0, len(data), k):
-#         ret += cipher.decrypt(data[i : i + k])
-#     return ret.decode()
+def rsa_dec(prikey, data: bytes):
+    key = RSA.importKey(prikey)
+    cipher = PKCS1_OAEP.new(key)
+    ret = b""
+    k = cipher._key.size_in_bytes()
+    for i in range(0, len(data), k):
+        ret += cipher.decrypt(data[i : i + k])
+    return ret.decode()
 
 
 def sha1withrsa(prikey, data: bytes):
@@ -72,9 +75,11 @@ def sha1withrsa(prikey, data: bytes):
     return base64.b64encode(signature).decode()
 
 
-def dealck(ck: str) -> dict:
-    cks = ck.split(";")
+def dealck(cookie: str):
+    cks = cookie.split(";")
     ckdict = {}
+    if not cks:
+        raise Exception("cookie is empty")
     for item in cks:
         item = item.strip()
         items = item.split("=")

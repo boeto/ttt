@@ -2,10 +2,11 @@ from pathlib import Path
 from time import sleep
 from typing import List, Tuple
 import typer
-from media_web_dl.core.cookie import cookieConfig
+from media_web_dl.core.cookie import cookie_config
 from media_web_dl.utils.enums import WebEnum
 from media_web_dl.utils.logger import log
 from media_web_dl.webs.iqy import Iqy
+from media_web_dl.webs.tx import TX
 from media_web_dl.webs.yk import YouKu
 from media_web_dl.utils.bash import run_bash
 from media_web_dl.webs.yk import yk_sh_dir_path, yk_cache_path, yk_history_path
@@ -14,6 +15,11 @@ from media_web_dl.webs.iqy import (
     iqy_cache_path,
     iqy_history_path,
 )
+from media_web_dl.webs.tx import (
+    tx_sh_dir_path,
+    tx_cache_path,
+    tx_history_path,
+)
 from media_web_dl.utils.files import files
 
 
@@ -21,13 +27,17 @@ class Dl:
     @staticmethod
     def url_file(url: str) -> None:
         if "youku.com" in url:
-            yk_cookie = cookieConfig.get_cookie(WebEnum.yk)
+            yk_cookie = cookie_config.get_cookie(WebEnum.yk)
             youku = YouKu(yk_cookie)
             youku.start(url)
         elif "iqiyi.com" in url:
-            iqy_cookie = cookieConfig.get_cookie(WebEnum.iqy)
+            iqy_cookie = cookie_config.get_cookie(WebEnum.iqy)
             iqy = Iqy(iqy_cookie)
             iqy.start(url)
+        elif "v.qq.com" in url:
+            tx_cookie = cookie_config.get_cookie(WebEnum.tx)
+            tx = TX(tx_cookie)
+            tx.start(url)
         else:
             log.error("暂不支持该链接")
 
@@ -57,10 +67,17 @@ class Dl:
             dir_path = yk_sh_dir_path
             cache_path = yk_cache_path
             history_path = yk_history_path
-        if web == WebEnum.iqy:
+        elif web == WebEnum.iqy:
             dir_path = iqy_sh_dir_path
             cache_path = iqy_cache_path
             history_path = iqy_history_path
+        elif web == WebEnum.tx:
+            dir_path = tx_sh_dir_path
+            cache_path = tx_cache_path
+            history_path = tx_history_path
+        else:
+            log.error("暂不支持该网站")
+            return
 
         file_list = files.tb_dir_sorted_time(dir_path)
 
@@ -86,6 +103,9 @@ class Dl:
 
     def iqy_save_sh_video(self) -> None:
         self.save_sh_video(WebEnum.iqy)
+
+    def tx_save_sh_video(self) -> None:
+        self.save_sh_video(WebEnum.tx)
 
     @staticmethod
     def clean_cache(path: Path):

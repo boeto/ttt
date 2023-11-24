@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Any, Dict
 from requests import Session
 import time
 import json
@@ -141,7 +142,7 @@ class YouKu:
                 return
             title = data["data"]["data"]["video"]["title"]
             log.info("解析成功")
-            keys = {}
+            keys: Dict[str, Any] = {}
             tv_stream = self.get_TV_stream(vid)
             stream.extend(tv_stream)
             for video in stream:
@@ -382,8 +383,10 @@ class YouKu:
         }
         m3u8data = session.get(m3u8_url, headers=headers).text
         key_url = re.findall(r"URI=\"(.*?)\"", m3u8data)[0]
-        response = session.get(key_url, headers=headers).text
-        pssh = response.split("data:text/plain;base64,").pop().split('",')[0]
+        response_text = session.get(key_url, headers=headers).text
+        pssh = (
+            response_text.split("data:text/plain;base64,").pop().split('",')[0]
+        )
         wvdecrypt = WvDecrypt(
             init_data_b64=pssh,
             cert_data_b64="",
@@ -466,7 +469,7 @@ class YouKu:
             "device_model": "XR-98X90L",
             "": "",
         }
-        streamss = []
+        streamss: list[Any] = []
         player_source = [20, 23, 22, 21]
         player_type = ["system", "dnahard"]
         for i in player_source:
@@ -523,9 +526,9 @@ class YouKu:
             "biz_params": json.dumps(biz_params),
             "ad_params": json.dumps(ad_params),
         }
-        params_data = json.dumps(params_data)
-        sign = self.youku_sign(t, params_data, user_info["token"])
-        return self.m3u8_url(t, params_data, sign, page_info["vid"])
+        params_data_dumps = json.dumps(params_data)
+        sign = self.youku_sign(t, params_data_dumps, user_info["token"])
+        return self.m3u8_url(t, params_data_dumps, sign, page_info["vid"])
 
     def start(self, url: str):
         url = self.redirect(url)

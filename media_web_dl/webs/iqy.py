@@ -1,6 +1,7 @@
 import base64
 import json
 import time
+from typing import Any, Dict, List
 from urllib import parse
 import requests
 from tabulate import tabulate
@@ -29,7 +30,9 @@ iqy_m3u8_dir_path = iqy_url_file_path / "m3u8"
 def get_key(pssh):
     LicenseUrl = "https://drml.video.iqiyi.com/drm/widevine?ve=0"
     wvdecrypt = WvDecrypt(
-        init_data_b64=pssh, device=deviceconfig.device_android_generic
+        init_data_b64=pssh,
+        cert_data_b64="",
+        device=deviceconfig.device_android_generic,
     )
     widevine_license = requests.post(
         url=LicenseUrl, data=wvdecrypt.get_challenge()
@@ -93,7 +96,7 @@ class Iqy:
             Cid = Album["_cid"]
             return pid, aid, tvid, Title, Cid
         except Exception as e:
-            log.info(e)
+            log.info(f"parse shareurl失败: {e}")
             return None, None, None, None, None
 
     @staticmethod
@@ -130,18 +133,18 @@ class Iqy:
                 return None
             data = response["data"]
             total = data["total"]
-            epsodelist = data["epsodelist"]
+            epsodelist: List[Dict[str, Any]] = data["epsodelist"]
 
             if total > size:
                 for i in range(2, total // size + 2):
                     params["page"] = i
                     response = requests.get(url, params=params).json()
                     epsodelist.extend(response["data"]["epsodelist"])
-            for i in epsodelist:
+            for epsode in epsodelist:
                 ret = {
                     "album": title,
-                    "name": i["name"],
-                    "tvId": i["tvId"],
+                    "name": epsode["name"],
+                    "tvId": epsode["tvId"],
                 }
                 rets.append(ret)
 
@@ -347,8 +350,8 @@ class Iqy:
                         key_string = get_key(pssh)
 
                         cmd_parts = [
-                            m3u8_bin_path,
-                            iqy_dot_m3u8_file_path,
+                            str(m3u8_bin_path),
+                            str(iqy_dot_m3u8_file_path),
                             f"--tmp-dir {iqy_cache_path}",
                             f"--save-name {save_name}",
                             f"--save-dir {save_dir_path}",

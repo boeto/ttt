@@ -52,4 +52,4 @@ class CookieConfig:
         cookie_yaml.write_yaml(self.cookies)
 
 
-cookieConfig = CookieConfig()
+cookie_config = CookieConfig()

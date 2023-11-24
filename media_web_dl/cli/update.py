@@ -1,6 +1,6 @@
 from typing import Annotated
 import typer
-from media_web_dl.core.cookie import cookieConfig
+from media_web_dl.core.cookie import cookie_config
 from media_web_dl.utils.enums import WebEnum
 from media_web_dl.utils.logger import log
 
@@ -18,7 +18,7 @@ def cookie(
         log.error("暂不支持该网站")
         return
 
-    cookieConfig.write_cookie(
+    cookie_config.write_cookie(
         name,
     )
 
