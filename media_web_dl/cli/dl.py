@@ -11,9 +11,7 @@ def url_file() -> None:
     """
     下载链接文件
     """
-    # url = typer.prompt("请输入视频链接")
-    url = "https://www.iqiyi.com/v_121nxvu7x98.html"
-    # url = "https://v.youku.com/v_show/id_XNjEyNzIxMDQ5Mg==.html"
+    url = typer.prompt("请输入视频链接")
     dl.url_file(url)
 
 
