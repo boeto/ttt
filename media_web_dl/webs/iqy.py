@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import time
 from typing import Any, Dict, List
 from urllib import parse
@@ -241,7 +242,6 @@ class Iqy:
         )
         log.info(table)
         av_index_input = typer.prompt(f"{select_prompt}")
-        log.debug(f"下载视频序号文件: {av_index_input}")
 
         av_input_int_list = get_input_int_list(av_index_input)
 
@@ -329,7 +329,7 @@ class Iqy:
                         iqy_dot_m3u8_file_path, "w", encoding="utf-8"
                     ) as f:
                         f.write(m3u8_data)
-                    log.info(f"m3u8文件已生成: {iqy_dot_m3u8_file_path}")
+                    log.info("m3u8文件已生成")
 
                     if m3u8_data.startswith('{"payload"'):
                         m3u8_data = json.loads(m3u8_data)
@@ -372,6 +372,8 @@ class Iqy:
                     with open(iqy_sh_file_path, "a", encoding="utf-8") as f:
                         f.write(cmd_content)
                         f.write("\n")
+                    os.chmod(iqy_sh_file_path, 0o755)
+
                     log.info(f"链接文件已生成: {iqy_sh_file_path}")
                     log.info(
                         "查看sh目录下的链接文件文件: media-web-dl show"

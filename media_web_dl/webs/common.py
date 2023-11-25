@@ -1,3 +1,5 @@
+from media_web_dl.utils.logger import log
+
 m3u8_bin_path = "N_m3u8DL-RE"
 select_prompt = """
 #输入格式
@@ -8,6 +10,7 @@ select_prompt = """
 
 
 def get_input_int_list(input_index: str) -> list[int]:
+    log.debug(f"下载视频序号文件: {input_index}")
     # -表示范围，,表示多个，如1-3表示1,2,3
     if "-" in input_index:
         start, end = input_index.split("-")
@@ -16,4 +19,5 @@ def get_input_int_list(input_index: str) -> list[int]:
         # ,表示多个，如1,3,5,7
         int_list = [int(x) for x in input_index.split(",")]
 
+    log.debug(f"序号列表: {int_list}")
     return int_list

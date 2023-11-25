@@ -17,7 +17,11 @@ from media_web_dl.utils.logger import log
 
 from media_web_dl.utils.tools import dealck
 from media_web_dl.utils.paths import output_path
-from media_web_dl.webs.common import m3u8_bin_path, select_prompt
+from media_web_dl.webs.common import (
+    get_input_int_list,
+    m3u8_bin_path,
+    select_prompt,
+)
 
 session = Session()
 
@@ -200,20 +204,11 @@ class YouKu:
             )
 
             log.info(tb)
-            ch_input = typer.prompt(f"{select_prompt}")
-            log.debug(f"下载视频序号文件: {ch_input}")
+            av_index_input = typer.prompt(f"{select_prompt}")
+            av_input_int_list = get_input_int_list(av_index_input)
 
-            # -表示范围，,表示多个，如1-3表示1,2,3
-            if "-" in ch_input:
-                start, end = ch_input.split("-")
-                ch = list(range(int(start), int(end) + 1))
-            else:
-                # ,表示多个，如1,3,5,7
-                ch = ch_input.split(",")
-
-            for i in ch:
-                i = int(i)
-                if i > len(video_lists):
+            for av_input_int in av_input_int_list:
+                if av_input_int > len(video_lists):
                     log.error("序号大于列表数,请重新输入")
                     break
 
@@ -226,16 +221,11 @@ class YouKu:
                     stream_type,
                     m3u8_url,
                     _,
-                ) = video_lists[i - 1]
-
-                # m3u8_info = (
-                #     f"title:{title}, size:{size}, resolution:{resolution},"
-                #     f" drm_type:{drm_type}, key:{key},"
-                #     f" stream_type:{stream_type}"
-                # )
+                ) = video_lists[av_input_int - 1]
 
                 save_name = (
-                    f"{title}_{resolution}_{drm_type}_{stream_type}_{size}_{i}"
+                    f"{title}_{resolution}_{drm_type}_"
+                    f"{stream_type}_{size}_{str(av_input_int)}"
                 ).replace(" ", "_")
                 log.debug(f"save_name:::{save_name}")
 
@@ -274,15 +264,13 @@ class YouKu:
                     {title}_{resolution}_{size},{m3u8_url}"""
                         if yk_txt_file_path.exists():
                             log.debug(f"txt:{txt}")
-                            log.info(
-                                f"{yk_txt_file_path}文件已存在,如需要重新下载,请删除该文件"
-                            )
+                            log.info(f"{yk_txt_file_path}文件已存在,跳过处理")
                             continue
                         with open(
                             yk_txt_file_path, "a", encoding="utf-8"
                         ) as f:
                             f.write(txt)
-                        log.info(f"{yk_txt_file_path}文件已经写入: {txt}")
+                        log.info(f"{yk_txt_file_path}文件已写入")
                         continue
 
                 else:
@@ -292,15 +280,13 @@ class YouKu:
 
                     if yk_dot_m3u8_file_path.exists():
                         log.debug(f"m3u8_url:{m3u8_url}")
-                        log.info(
-                            f"{yk_dot_m3u8_file_path}文件已存在,如需要重新下载,请删除该文件"
-                        )
+                        log.info(f"{yk_dot_m3u8_file_path}文件已存在,跳过处理")
                         continue
                     with open(
                         yk_dot_m3u8_file_path, "w", encoding="utf-8"
                     ) as f:
                         f.write(m3u8_url)
-                    log.info(f"{yk_dot_m3u8_file_path}文件已写入: {m3u8_url}")
+                    log.info(f"{yk_dot_m3u8_file_path}文件已写入")
 
                     key = "{}:{}".format(keyid, base64.b64decode(key).hex())
                     common_args = (
@@ -316,15 +302,13 @@ class YouKu:
 
                 if yk_sh_file_path.exists():
                     log.debug(f"cmd_content:{cmd_content}")
-                    log.info(
-                        f"{yk_sh_file_path}文件已存在,如需要重新下载,请删除该文件"
-                    )
+                    log.info(f"{yk_sh_file_path}文件已存在,跳过处理")
                     continue
+
                 with open(yk_sh_file_path, "a", encoding="utf-8") as f:
                     f.write(cmd_content)
                     f.write("\n")
                 os.chmod(yk_sh_file_path, 0o755)
-                log.info(f"{yk_sh_file_path}文件已写入: {cmd_content}")
 
                 log.info(f"链接文件已生成: {yk_sh_file_path}")
                 log.info(

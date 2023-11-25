@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import json
+import os
 import random
 import time
 from pathlib import Path
@@ -621,9 +622,8 @@ class TX:
         )
 
         av_index_input = typer.prompt(f"{select_prompt}")
-        log.debug(f"下载视频序号文件: {av_index_input}")
-
         av_input_int_list = get_input_int_list(av_index_input)
+        fn_list: list[str] = []
 
         for av_input_int in av_input_int_list:
             viddeo_data = url_list[av_input_int - 1]
@@ -634,36 +634,45 @@ class TX:
                 log.info("无法获取清晰度,跳过")
                 continue
 
-            defn = []
+            v_info_list = []
+            v_index_input: str = ""
             for f in fi:
                 cname = f["cname"]
                 name = f["name"]
                 fs = f["fs"]
                 size = get_size(fs)
                 fn = f["id"]
-                defn.append([fn, name, cname, size, fs])
-            defn.sort(key=lambda x: x[-1], reverse=True)
+                v_info_list.append([fn, name, cname, size, fs])
+            v_info_list.sort(key=lambda x: x[-1], reverse=True)
             log.info(
                 tabulate(
-                    defn,
+                    v_info_list,
                     headers=["id", "fn", "cname", "size", "rsize"],
                     tablefmt="pretty",
-                    showindex=range(1, len(defn) + 1),
+                    showindex=range(1, len(v_info_list) + 1),
                 )
             )
 
-            v_index_input = typer.prompt(select_prompt)
-            log.debug(f"下载视频序号文件: {v_index_input}")
+            log.debug(f"fn_list::: {fn_list}")
+            if len(fn_list) < 1:
+                v_index_input = typer.prompt(select_prompt)
+                v_input_int_list = get_input_int_list(v_index_input)
 
-            v_input_int_list = get_input_int_list(v_index_input)
+                for v_input_int in v_input_int_list:
+                    _fn = v_info_list[v_input_int - 1][1]
+                    fn_list.append(_fn)
 
-            for v_input_int in v_input_int_list:
-                defn_fn = defn[v_input_int - 1][1]
-                defn_size = defn[v_input_int - 1][3]
+            for defn_fn in fn_list:
+                defn_size = ""
+                for v_info in v_info_list:
+                    if v_info[1] == defn_fn:
+                        defn_size = v_info[3]
+                        break
 
                 rr = (
                     self.get(vid, url, defn_fn) if defn_fn != "hdr10" else data
                 )
+
                 vi = rr["vl"]["vi"][0]
                 ui = vi["ul"]["ui"]
                 enc = vi.get("enc")
@@ -708,6 +717,10 @@ class TX:
 
                 save_dir_path = tx_save_path / (f"{c_title}").replace(" ", "_")
 
+                if tx_sh_file_path.exists():
+                    log.info(f"链接文件已存在: {tx_sh_file_path}, 跳过处理")
+                    continue
+
                 tx_cache_path.mkdir(parents=True, exist_ok=True)
                 tx_history_path.mkdir(parents=True, exist_ok=True)
                 save_dir_path.mkdir(parents=True, exist_ok=True)
@@ -733,6 +746,8 @@ class TX:
                 with open(tx_sh_file_path, "a", encoding="utf-8") as f:
                     f.write(cmd_content)
                     f.write("\n")
+                os.chmod(tx_sh_file_path, 0o755)
+
                 log.info(f"链接文件已生成: {tx_sh_file_path}")
                 log.info(
                     "查看sh目录下的链接文件文件: media-web-dl show tx-save-sh"
