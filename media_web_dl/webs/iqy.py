@@ -12,7 +12,11 @@ from media_web_dl.utils.tools import dealck, md5, get_size, get_pssh
 
 from media_web_dl.utils.paths import output_path
 from media_web_dl.utils.logger import log
-from media_web_dl.webs.common import m3u8_bin_path
+from media_web_dl.webs.common import (
+    get_input_int_list,
+    m3u8_bin_path,
+    select_prompt,
+)
 
 # paths
 iqy_output_path = output_path / "iqy"
@@ -236,32 +240,20 @@ class Iqy:
             showindex=range(1, len(avlist) + 1),
         )
         log.info(table)
-        av_index_input = typer.prompt("""
-#输入格式
-单集: 下载单个url文件, 例如: 5
-范围: 下载范围内的url文件, 例如: 1-5
-多个: 下载多个url文件, 例如: 1,3,5,7
-请输入要下载的视频序号""")
+        av_index_input = typer.prompt(f"{select_prompt}")
         log.debug(f"下载视频序号文件: {av_index_input}")
 
-        # -表示范围，,表示多个，如1-3表示1,2,3
-        if "-" in av_index_input:
-            start, end = av_index_input.split("-")
-            av_index_list = list(range(int(start), int(end) + 1))
-        else:
-            # ,表示多个，如1,3,5,7
-            av_index_list = av_index_input.split(",")
+        av_input_int_list = get_input_int_list(av_index_input)
 
-        for av_index in av_index_list:
-            av_index = int(av_index)
+        for av_input_int in av_input_int_list:
             list_len = len(avlist)
-            if av_index > list_len:
+            if av_input_int > list_len:
                 log.error("序号大于列表数,请重新输入")
                 break
 
-            tvId = avlist[av_index - 1]["tvId"]
-            avlist_name = avlist[av_index - 1]["name"]
-            ctitle = avlist[av_index - 1]["album"]
+            tvId = avlist[av_input_int - 1]["tvId"]
+            avlist_name = avlist[av_input_int - 1]["name"]
+            ctitle = avlist[av_input_int - 1]["album"]
             log.info(f"正在获取{ctitle} {avlist_name}的m3u8")
             response = self.get_dash(tvid=tvId)
 
@@ -279,8 +271,6 @@ class Iqy:
                 log.info("无视频")
                 continue
             video_list = program["video"]
-            # audio = program["audio"]
-            # stl = program.get("stl", [])
 
             m3u8_list = []
             for video in video_list:

@@ -28,7 +28,11 @@ from media_web_dl.utils.enums import WebEnum
 from media_web_dl.utils.logger import log
 from media_web_dl.utils.wasm import wasmBinaryFile
 from media_web_dl.utils.paths import output_path
-from media_web_dl.webs.common import m3u8_bin_path, select_prompt
+from media_web_dl.webs.common import (
+    get_input_int_list,
+    m3u8_bin_path,
+    select_prompt,
+)
 from media_web_dl.utils.tools import (
     rsa_dec,
     aes_decrypt,
@@ -390,20 +394,18 @@ class TX:
     def login(self):
         cookie = dealck(self.ck)
 
+        auth_url = "https://access.video.qq.com/user/auth_refresh"
+
         for logintoken_index in self.logintoken:
             self.logintoken[logintoken_index] = cookie.get(
                 logintoken_index
             ) or cookie.get("vqq_" + logintoken_index)
             if not self.logintoken[logintoken_index]:
-                raise ValueError(
-                    "cookie无效,请重新获取cookie:"
-                    " 'https://access.video.qq.com/user/auth_refresh'"
-                )
+                raise ValueError(f"cookie无效,请重新获取cookie: {auth_url}")
 
         self.h38 = cookie.get("_qimei_h38", "")
         self.guid = cookie.get("video_guid", "")
 
-        url = "https://access.video.qq.com/user/auth_refresh"
         params = {
             "vappid": "11059694",
             "vsecret": "fdf61a6be0aad57132bc5cdf78ac30145b6cd2c1470b0cfe",
@@ -413,7 +415,7 @@ class TX:
             "g_actk": djb2Hash(self.logintoken.get("access_token", "")) or "",
             "_": str(int(time.time() * 1000)),
         }
-        url_res = self.re.get(url, params=params)
+        url_res = self.re.get(auth_url, params=params)
 
         data_text = url_res.text
         if "=" in data_text:
@@ -621,21 +623,11 @@ class TX:
         av_index_input = typer.prompt(f"{select_prompt}")
         log.debug(f"下载视频序号文件: {av_index_input}")
 
-        # -表示范围，,表示多个，如1-3表示1,2,3
-        if "-" in av_index_input:
-            log.debug(f"av_index_input:::{av_index_input}")
-            start, end = av_index_input.split("-")
-            log.debug(f"start:::{start}")
-            log.debug(f"end:::{end}")
-            av_index_list = list(range(int(start), int(end) + 1))
-            log.debug(f"av_index_list:::{av_index_list}")
-        else:
-            # ,表示多个，如1,3,5,7
-            av_index_list = av_index_input.split(",")
+        av_input_int_list = get_input_int_list(av_index_input)
 
-        for av_index in av_index_list:
-            viddeodata = url_list[int(av_index) - 1]
-            c_title, title, vid = viddeodata
+        for av_input_int in av_input_int_list:
+            viddeo_data = url_list[av_input_int - 1]
+            c_title, title, vid = viddeo_data
             data = self.get(vid=vid, url=url)
             fi = data.get("fl", {}).get("fi", {})
             if not fi:
@@ -663,17 +655,11 @@ class TX:
             v_index_input = typer.prompt(select_prompt)
             log.debug(f"下载视频序号文件: {v_index_input}")
 
-            # -表示范围，,表示多个，如1-3表示1,2,3
-            if "-" in v_index_input:
-                start, end = v_index_input.split("-")
-                v_index_list = list(range(int(start), int(end) + 1))
-            else:
-                # ,表示多个，如1,3,5,7
-                v_index_list = v_index_input.split(",")
+            v_input_int_list = get_input_int_list(v_index_input)
 
-            for v_index in v_index_list:
-                defn_fn = defn[int(v_index) - 1][1]
-                defn_size = defn[int(v_index) - 1][3]
+            for v_input_int in v_input_int_list:
+                defn_fn = defn[v_input_int - 1][1]
+                defn_size = defn[v_input_int - 1][3]
 
                 rr = (
                     self.get(vid, url, defn_fn) if defn_fn != "hdr10" else data

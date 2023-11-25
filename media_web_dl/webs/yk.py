@@ -17,7 +17,7 @@ from media_web_dl.utils.logger import log
 
 from media_web_dl.utils.tools import dealck
 from media_web_dl.utils.paths import output_path
-from media_web_dl.webs.common import m3u8_bin_path
+from media_web_dl.webs.common import m3u8_bin_path, select_prompt
 
 session = Session()
 
@@ -200,12 +200,7 @@ class YouKu:
             )
 
             log.info(tb)
-            ch_input = typer.prompt("""
-#输入格式
-单集: 下载单个url文件, 例如: 5
-范围: 下载范围内的url文件, 例如: 1-5
-多个: 下载多个url文件, 例如: 1,3,5,7
-请输入要下载的视频序号""")
+            ch_input = typer.prompt(f"{select_prompt}")
             log.debug(f"下载视频序号文件: {ch_input}")
 
             # -表示范围，,表示多个，如1-3表示1,2,3
