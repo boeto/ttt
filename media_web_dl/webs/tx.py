@@ -635,7 +635,6 @@ class TX:
                 continue
 
             v_info_list = []
-            v_index_input: str = ""
             for f in fi:
                 cname = f["cname"]
                 name = f["name"]
